@@ -1,14 +1,13 @@
-const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
+const chromium  = require("@sparticuz/chromium");
 
-// Diamantes de pagostore RD y sus item IDs
 const ITEMS = [
-  { key: "110",   itemId: "49518" },
-  { key: "341",   itemId: "49519" },
-  { key: "572",   itemId: "49520" },
-  { key: "1166",  itemId: "49521" },
-  { key: "2398",  itemId: "49522" },
-  { key: "6160",  itemId: "49523" },
+  { key: "110",  itemId: "49518" },
+  { key: "341",  itemId: "49519" },
+  { key: "572",  itemId: "49520" },
+  { key: "1166", itemId: "49521" },
+  { key: "2398", itemId: "49522" },
+  { key: "6160", itemId: "49523" },
 ];
 
 exports.handler = async (event) => {
@@ -19,7 +18,11 @@ exports.handler = async (event) => {
 
   const uid = event.queryStringParameters?.uid;
   if (!uid || !/^\d{5,15}$/.test(uid)) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "UID inválido" }) };
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "UID inválido" }),
+    };
   }
 
   let browser;
@@ -33,35 +36,32 @@ exports.handler = async (event) => {
       "Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"
     );
 
-    // Primero cargamos la página con el UID para que quede logueado/identificado
-    await page.goto(`https://pagostore.garena.com/?item=49518&uid=${uid}`, {
-      waitUntil: "networkidle2",
-      timeout: 20000,
-    });
+    // Cargamos la primera página con el UID
+    await page.goto(
+      `https://pagostore.garena.com/?item=49518&uid=${uid}`,
+      { waitUntil: "networkidle2", timeout: 20000 }
+    );
+
+    // Esperamos 2 segundos para que cargue bien
+    await new Promise(r => setTimeout(r, 2000));
 
     const results = {};
 
     for (const item of ITEMS) {
       try {
-        // Navegamos a cada monto
-        await page.goto(`https://pagostore.garena.com/?item=${item.itemId}&uid=${uid}`, {
-          waitUntil: "networkidle2",
-          timeout: 15000,
-        });
+        await page.goto(
+          `https://pagostore.garena.com/?item=${item.itemId}&uid=${uid}`,
+          { waitUntil: "networkidle2", timeout: 15000 }
+        );
 
-        // Esperamos que cargue la sección de método de pago
-        await page.waitForSelector(".payment-method, .pay-method, [class*='payment']", {
-          timeout: 8000,
-        }).catch(() => {});
+        // Esperamos que cargue la sección de pago
+        await new Promise(r => setTimeout(r, 2500));
 
-        // Buscamos precio tachado (precio original en rojo = hay descuento)
+        // Buscamos precio tachado = tiene descuento
         const hasDiscount = await page.evaluate(() => {
-          const html = document.body.innerHTML;
-          // Buscamos el precio tachado que aparece en rojo cuando hay descuento
+          const body = document.body.innerHTML;
           return (
-            html.includes("line-through") ||
-            html.includes("original-price") ||
-            html.includes("old-price") ||
+            body.includes("line-through") ||
             !!document.querySelector("[style*='line-through']") ||
             !!document.querySelector(".original-price") ||
             !!document.querySelector(".old-price") ||
@@ -71,12 +71,13 @@ exports.handler = async (event) => {
         });
 
         results[item.key] = hasDiscount;
+
       } catch {
         results[item.key] = false;
       }
     }
 
-    // Intentamos sacar el nombre del jugador
+    // Intentamos obtener el nombre del jugador
     const nick = await page.evaluate(() => {
       const el =
         document.querySelector(".username") ||
@@ -93,6 +94,7 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({ nick, discounts: results }),
     };
+
   } catch (err) {
     if (browser) await browser.close().catch(() => {});
     return {
