@@ -1,0 +1,6 @@
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["puppeteer-core", "@sparticuz/chromium"]
+
+[build]
+  functions = "netlify/functions"
