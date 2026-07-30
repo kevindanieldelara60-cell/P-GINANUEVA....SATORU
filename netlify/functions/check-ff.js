@@ -22,7 +22,6 @@ exports.handler = async (event) => {
     { key: "6160", itemId: "49523" },
   ];
 
-  // Verificamos cada item en paralelo — una sesión de browser por item
   const checkItem = async (item) => {
     const code = `
       export default async ({ page }) => {
@@ -31,46 +30,40 @@ exports.handler = async (event) => {
           waitUntil: "networkidle2",
           timeout: 20000,
         });
-        await new Promise(r => setTimeout(r, 2500));
+        await new Promise(r => setTimeout(r, 3000));
 
         const result = await page.evaluate(() => {
-          // Buscamos precio en rojo = descuento activo
-          const allElements = document.querySelectorAll("*");
-          for (const el of allElements) {
+          // La señal más confiable: existe un elemento con text-decoration line-through
+          // que contenga "DOP" — ese es el precio original tachado que aparece solo con descuento
+          const all = Array.from(document.querySelectorAll("*"));
+          for (const el of all) {
+            const text = (el.innerText || "").trim();
+            if (!text.includes("DOP")) continue;
+            // Revisamos el estilo computado
             const style = window.getComputedStyle(el);
-            const color = style.color;
-            const text = el.innerText || "";
-            if (color.startsWith("rgb(") && text.includes("DOP")) {
-              const parts = color.match(/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)/);
-              if (parts) {
-                const r = parseInt(parts[1]);
-                const g = parseInt(parts[2]);
-                const b = parseInt(parts[3]);
-                if (r > 150 && g < 100 && b < 100) return true;
-              }
-            }
+            if (style.textDecoration.includes("line-through")) return true;
+            if (style.textDecorationLine === "line-through") return true;
+            // También revisamos el HTML por si está inline
+            if (el.style && el.style.textDecoration && el.style.textDecoration.includes("line-through")) return true;
           }
-          return (
-            !!document.querySelector("[style*='line-through']") ||
-            !!document.querySelector(".original-price") ||
-            !!document.querySelector(".old-price") ||
-            !!document.querySelector("del") ||
-            document.body.innerHTML.includes("line-through")
-          );
+          // Fallback: buscar en el HTML crudo
+          const html = document.body.innerHTML;
+          if (html.includes("line-through") && html.includes("DOP")) return true;
+          // Buscar elemento <s> o <del> con DOP
+          const struck = document.querySelectorAll("s, del");
+          for (const el of struck) {
+            if ((el.innerText || "").includes("DOP")) return true;
+          }
+          return false;
         });
 
         return { data: result, type: "application/json" };
       };
     `;
-
     try {
       const res = await fetch(
         `https://production-sfo.browserless.io/function?token=${process.env.BROWSERLESS_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/javascript" },
-          body: code,
-        }
+        { method: "POST", headers: { "Content-Type": "application/javascript" }, body: code }
       );
       const data = await res.json();
       return { key: item.key, hasDiscount: data === true || data?.data === true || data === "true" };
@@ -79,7 +72,6 @@ exports.handler = async (event) => {
     }
   };
 
-  // Obtenemos el nick en paralelo con el primer item
   const getNick = async () => {
     const code = `
       export default async ({ page }) => {
@@ -93,7 +85,7 @@ exports.handler = async (event) => {
           const text = document.body.innerText;
           const match = text.match(/Nombre de usuario[:\\s]+([^\\n\\r]+)/i);
           if (match) return match[1].trim();
-          const selectors = [".username",".player-name","[class*='username']","[class*='nickname']","[class*='account-name']"];
+          const selectors = [".username",".player-name","[class*='username']","[class*='nickname']","[class*='account']"];
           for (const sel of selectors) {
             const el = document.querySelector(sel);
             if (el && el.innerText.trim()) return el.innerText.trim();
@@ -106,11 +98,7 @@ exports.handler = async (event) => {
     try {
       const res = await fetch(
         `https://production-sfo.browserless.io/function?token=${process.env.BROWSERLESS_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/javascript" },
-          body: code,
-        }
+        { method: "POST", headers: { "Content-Type": "application/javascript" }, body: code }
       );
       const data = await res.json();
       return data?.data || null;
@@ -120,7 +108,6 @@ exports.handler = async (event) => {
   };
 
   try {
-    // Lanzamos todo en paralelo
     const [nickResult, ...itemResults] = await Promise.all([
       getNick(),
       ...ITEMS.map(item => checkItem(item)),
