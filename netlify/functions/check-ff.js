@@ -22,104 +22,112 @@ exports.handler = async (event) => {
     { key: "6160", itemId: "49523" },
   ];
 
+  // Función que abre pagostore, ingresa el UID, y chequea UN item
   const checkItem = async (item) => {
     const code = `
       export default async ({ page }) => {
         await page.setUserAgent("Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36");
-        await page.goto("https://pagostore.garena.com/?item=${item.itemId}&uid=${uid}", {
-          waitUntil: "networkidle2",
-          timeout: 20000,
-        });
-        await new Promise(r => setTimeout(r, 3000));
 
+        // Abrimos la página con el item específico
+        await page.goto("https://pagostore.garena.com/?item=${item.itemId}", {
+          waitUntil: "networkidle2",
+          timeout: 25000,
+        });
+        await new Promise(r => setTimeout(r, 2000));
+
+        // Ingresamos el UID en el campo de texto
+        const input = await page.$('input[placeholder*="ID"], input[placeholder*="jugador"], input[type="text"], input[type="number"]');
+        if (input) {
+          await input.click({ clickCount: 3 });
+          await input.type("${uid}", { delay: 80 });
+          await new Promise(r => setTimeout(r, 500));
+
+          // Clickeamos "Iniciar Sesión"
+          const btn = await page.$('button[type="submit"], .login-btn, button.btn-login');
+          if (btn) {
+            await btn.click();
+          } else {
+            // Buscamos el botón por texto
+            const buttons = await page.$$("button");
+            for (const b of buttons) {
+              const txt = await page.evaluate(el => el.innerText, b);
+              if (txt && (txt.includes("Iniciar") || txt.includes("Sesión") || txt.includes("Login"))) {
+                await b.click();
+                break;
+              }
+            }
+          }
+
+          // Esperamos que cargue la cuenta y los métodos de pago
+          await new Promise(r => setTimeout(r, 4000));
+        }
+
+        // Ahora detectamos si hay precio tachado (= descuento activo)
         const result = await page.evaluate(() => {
-          // La señal más confiable: existe un elemento con text-decoration line-through
-          // que contenga "DOP" — ese es el precio original tachado que aparece solo con descuento
+          // Buscamos cualquier elemento con text-decoration line-through que tenga "DOP"
           const all = Array.from(document.querySelectorAll("*"));
           for (const el of all) {
             const text = (el.innerText || "").trim();
             if (!text.includes("DOP")) continue;
-            // Revisamos el estilo computado
             const style = window.getComputedStyle(el);
-            if (style.textDecoration.includes("line-through")) return true;
-            if (style.textDecorationLine === "line-through") return true;
-            // También revisamos el HTML por si está inline
-            if (el.style && el.style.textDecoration && el.style.textDecoration.includes("line-through")) return true;
+            if (
+              style.textDecoration.includes("line-through") ||
+              style.textDecorationLine === "line-through"
+            ) return true;
           }
-          // Fallback: buscar en el HTML crudo
-          const html = document.body.innerHTML;
-          if (html.includes("line-through") && html.includes("DOP")) return true;
-          // Buscar elemento <s> o <del> con DOP
-          const struck = document.querySelectorAll("s, del");
-          for (const el of struck) {
+          // Buscar <s> o <del> con DOP
+          for (const el of document.querySelectorAll("s, del")) {
             if ((el.innerText || "").includes("DOP")) return true;
           }
-          return false;
+          // Buscar en HTML crudo
+          const html = document.body.innerHTML;
+          return html.includes("line-through") && html.includes("DOP");
         });
 
-        return { data: result, type: "application/json" };
-      };
-    `;
-    try {
-      const res = await fetch(
-        `https://production-sfo.browserless.io/function?token=${process.env.BROWSERLESS_KEY}`,
-        { method: "POST", headers: { "Content-Type": "application/javascript" }, body: code }
-      );
-      const data = await res.json();
-      return { key: item.key, hasDiscount: data === true || data?.data === true || data === "true" };
-    } catch {
-      return { key: item.key, hasDiscount: false };
-    }
-  };
-
-  const getNick = async () => {
-    const code = `
-      export default async ({ page }) => {
-        await page.setUserAgent("Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36");
-        await page.goto("https://pagostore.garena.com/?item=49518&uid=${uid}", {
-          waitUntil: "networkidle2",
-          timeout: 20000,
-        });
-        await new Promise(r => setTimeout(r, 2000));
+        // Intentamos sacar el nick también
         const nick = await page.evaluate(() => {
           const text = document.body.innerText;
           const match = text.match(/Nombre de usuario[:\\s]+([^\\n\\r]+)/i);
           if (match) return match[1].trim();
-          const selectors = [".username",".player-name","[class*='username']","[class*='nickname']","[class*='account']"];
-          for (const sel of selectors) {
-            const el = document.querySelector(sel);
-            if (el && el.innerText.trim()) return el.innerText.trim();
-          }
           return null;
         });
-        return { data: nick, type: "application/json" };
+
+        return { data: { hasDiscount: result, nick }, type: "application/json" };
       };
     `;
+
     try {
       const res = await fetch(
         `https://production-sfo.browserless.io/function?token=${process.env.BROWSERLESS_KEY}`,
         { method: "POST", headers: { "Content-Type": "application/javascript" }, body: code }
       );
       const data = await res.json();
-      return data?.data || null;
+      const inner = data?.data || {};
+      return {
+        key: item.key,
+        hasDiscount: inner.hasDiscount === true,
+        nick: inner.nick || null,
+      };
     } catch {
-      return null;
+      return { key: item.key, hasDiscount: false, nick: null };
     }
   };
 
   try {
-    const [nickResult, ...itemResults] = await Promise.all([
-      getNick(),
-      ...ITEMS.map(item => checkItem(item)),
-    ]);
+    // Corremos todos los items en paralelo
+    const itemResults = await Promise.all(ITEMS.map(item => checkItem(item)));
 
     const discounts = {};
-    itemResults.forEach(r => { discounts[r.key] = r.hasDiscount; });
+    let nick = null;
+    itemResults.forEach(r => {
+      discounts[r.key] = r.hasDiscount;
+      if (r.nick && !nick) nick = r.nick;
+    });
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ nick: nickResult, discounts }),
+      body: JSON.stringify({ nick, discounts }),
     };
   } catch (err) {
     return {
