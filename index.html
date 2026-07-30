@@ -8,316 +8,146 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg:       #0A0A0F;
-    --surface:  #12121A;
-    --border:   rgba(255,255,255,0.07);
-    --ff:       #FF4B2B;
-    --bs:       #FFD700;
-    --ig:       #E1306C;
-    --rb:       #00D4FF;
-    --text:     #F0F0F0;
-    --muted:    #888;
-    --radius:   14px;
+    --bg:#0A0A0F; --surface:#12121A; --border:rgba(255,255,255,0.07);
+    --ff:#FF4B2B; --bs:#FFD700; --ig:#E1306C; --rb:#00D4FF;
+    --text:#F0F0F0; --muted:#888; --radius:14px;
   }
-
   html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  #particles {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    overflow: hidden;
-  }
-  .particle {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0;
-    animation: float-particle linear infinite;
-  }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; overflow-x:hidden; }
+  #particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .particle { position:absolute; border-radius:50%; opacity:0; animation:float-particle linear infinite; }
   @keyframes float-particle {
-    0%   { transform: translateY(100vh) scale(0); opacity: 0; }
-    10%  { opacity: 0.6; }
-    90%  { opacity: 0.2; }
-    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    0%   { transform:translateY(100vh) scale(0); opacity:0; }
+    10%  { opacity:0.6; }
+    90%  { opacity:0.2; }
+    100% { transform:translateY(-10vh) scale(1); opacity:0; }
   }
-
   #lobby {
-    position: relative; z-index: 10;
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 48px; padding: 32px;
-    transition: opacity .5s, transform .5s;
+    position:relative; z-index:10; min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:48px; padding:32px; transition:opacity .5s, transform .5s;
   }
-  #lobby.hidden { opacity: 0; pointer-events: none; transform: scale(.96); }
-
-  .lobby-header { text-align: center; }
+  #lobby.hidden { opacity:0; pointer-events:none; transform:scale(.96); }
+  .lobby-header { text-align:center; }
   .lobby-header h1 {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: clamp(2.4rem, 7vw, 4.5rem);
-    font-weight: 700; letter-spacing: .08em; line-height: 1;
-    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-family:'Rajdhani',sans-serif; font-size:clamp(2.4rem,7vw,4.5rem);
+    font-weight:700; letter-spacing:.08em; line-height:1;
+    background:linear-gradient(135deg,#fff 0%,#aaa 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
   }
-  .lobby-header p { margin-top: 10px; color: var(--muted); font-size: .9rem; letter-spacing: .04em; }
-
-  .orbs-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 24px; width: min(400px, 90vw);
-  }
+  .lobby-header p { margin-top:10px; color:var(--muted); font-size:.9rem; letter-spacing:.04em; }
+  .orbs-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; width:min(400px,90vw); }
   .orb {
-    position: relative; aspect-ratio: 1; border-radius: 50%;
-    cursor: pointer; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 8px;
-    border: 2px solid transparent;
-    transition: transform .25s, box-shadow .25s;
-    user-select: none; overflow: hidden;
+    position:relative; aspect-ratio:1; border-radius:50%; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; border:2px solid transparent; transition:transform .25s, box-shadow .25s;
+    user-select:none; overflow:hidden;
   }
   .orb::before {
-    content: ''; position: absolute; inset: 0; border-radius: 50%;
-    background: inherit; filter: blur(18px); opacity: .35;
-    transform: scale(1.15); z-index: -1; transition: opacity .25s;
+    content:''; position:absolute; inset:0; border-radius:50%; background:inherit;
+    filter:blur(18px); opacity:.35; transform:scale(1.15); z-index:-1; transition:opacity .25s;
   }
-  .orb:hover { transform: scale(1.07); }
-  .orb:hover::before { opacity: .55; }
-  .orb:active { transform: scale(.97); }
-
-  .orb-ff  { background: radial-gradient(circle at 40% 35%, #ff7043 0%, #FF4B2B 55%, #8B1A00 100%); box-shadow: 0 0 28px rgba(255,75,43,.4); }
-  .orb-bs  { background: radial-gradient(circle at 40% 35%, #ffe259 0%, #FFD700 55%, #7a6200 100%); box-shadow: 0 0 28px rgba(255,215,0,.4); }
-  .orb-ig  { background: radial-gradient(circle at 40% 35%, #f77737 0%, #E1306C 50%, #833AB4 100%); box-shadow: 0 0 28px rgba(225,48,108,.4); }
-  .orb-rb  { background: radial-gradient(circle at 40% 35%, #70e8fc 0%, #00D4FF 55%, #005f80 100%); box-shadow: 0 0 28px rgba(0,212,255,.4); }
-
-  .orb-icon { font-size: clamp(2rem, 8vw, 2.8rem); line-height: 1; }
-  .orb-label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: clamp(.75rem, 2.5vw, .95rem);
-    font-weight: 600; letter-spacing: .06em;
-    color: rgba(255,255,255,.9); text-align: center; padding: 0 6px;
-  }
-
+  .orb:hover { transform:scale(1.07); }
+  .orb:hover::before { opacity:.55; }
+  .orb:active { transform:scale(.97); }
+  .orb-ff  { background:radial-gradient(circle at 40% 35%,#ff7043 0%,#FF4B2B 55%,#8B1A00 100%); box-shadow:0 0 28px rgba(255,75,43,.4); }
+  .orb-bs  { background:radial-gradient(circle at 40% 35%,#ffe259 0%,#FFD700 55%,#7a6200 100%); box-shadow:0 0 28px rgba(255,215,0,.4); }
+  .orb-ig  { background:radial-gradient(circle at 40% 35%,#f77737 0%,#E1306C 50%,#833AB4 100%); box-shadow:0 0 28px rgba(225,48,108,.4); }
+  .orb-rb  { background:radial-gradient(circle at 40% 35%,#70e8fc 0%,#00D4FF 55%,#005f80 100%); box-shadow:0 0 28px rgba(0,212,255,.4); }
+  .orb-icon { font-size:clamp(2rem,8vw,2.8rem); line-height:1; }
+  .orb-label { font-family:'Rajdhani',sans-serif; font-size:clamp(.75rem,2.5vw,.95rem); font-weight:600; letter-spacing:.06em; color:rgba(255,255,255,.9); text-align:center; padding:0 6px; }
   .section-page {
-    position: fixed; inset: 0; z-index: 20;
-    background: var(--bg); overflow-y: auto; padding: 0 0 80px;
-    opacity: 0; pointer-events: none; transform: translateY(20px);
-    transition: opacity .4s ease, transform .4s ease;
+    position:fixed; inset:0; z-index:20; background:var(--bg); overflow-y:auto; padding:0 0 80px;
+    opacity:0; pointer-events:none; transform:translateY(20px); transition:opacity .4s ease, transform .4s ease;
   }
-  .section-page.active { opacity: 1; pointer-events: all; transform: translateY(0); }
-
+  .section-page.active { opacity:1; pointer-events:all; transform:translateY(0); }
   .topbar {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(10,10,15,.85);
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+    position:sticky; top:0; z-index:100; background:rgba(10,10,15,.85);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; padding:14px 20px;
   }
-  .back-btn {
-    background: rgba(255,255,255,.08); border: none; border-radius: 8px;
-    color: var(--text); cursor: pointer; font-size: 1.2rem; padding: 6px 12px;
-    transition: background .2s;
-  }
-  .back-btn:hover { background: rgba(255,255,255,.15); }
-  .topbar-title { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.25rem; letter-spacing: .06em; }
-  .topbar-badge {
-    margin-left: auto; font-size: .75rem;
-    background: rgba(255,255,255,.06); border: 1px solid var(--border);
-    border-radius: 20px; padding: 4px 12px; color: var(--muted);
-  }
-
-  .section-hero { padding: 32px 20px 24px; text-align: center; }
-  .section-hero h2 {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: clamp(1.8rem, 6vw, 3rem); font-weight: 700; letter-spacing: .06em;
-  }
-  .section-hero p { margin-top: 8px; color: var(--muted); font-size: .88rem; max-width: 420px; margin-inline: auto; }
-
-  .id-panel {
-    margin: 0 16px 24px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 20px; animation: float-panel 4s ease-in-out infinite;
-  }
-  @keyframes float-panel {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-6px); }
-  }
-  .id-panel label {
-    display: block; font-size: .78rem; letter-spacing: .1em;
-    color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
-  }
-  .id-input-row { display: flex; gap: 10px; }
-  .id-input {
-    flex: 1; background: rgba(255,255,255,.05);
-    border: 1px solid rgba(255,255,255,.12); border-radius: 8px;
-    color: var(--text); font-family: 'Inter', sans-serif;
-    font-size: .95rem; padding: 12px 14px; outline: none;
-    transition: border-color .2s; min-width: 0;
-  }
-  .id-input::placeholder { color: rgba(255,255,255,.25); font-style: italic; }
-  .id-input:focus { border-color: var(--ff); }
-  .id-btn {
-    background: var(--ff); border: none; border-radius: 8px;
-    color: #fff; cursor: pointer; font-family: 'Rajdhani', sans-serif;
-    font-size: 1rem; font-weight: 600; letter-spacing: .05em;
-    padding: 12px 18px; transition: filter .2s, transform .15s; white-space: nowrap;
-  }
-  .id-btn:hover  { filter: brightness(1.15); }
-  .id-btn:active { transform: scale(.96); }
-
-  .id-result {
-    margin-top: 14px; border-radius: 8px;
-    padding: 12px 14px; font-size: .88rem; display: none;
-  }
-  .id-result.success { display: block; background: rgba(0,255,120,.08); border: 1px solid rgba(0,255,120,.2); color: #5fff9a; }
-  .id-result.warning { display: block; background: rgba(255,160,0,.08); border: 1px solid rgba(255,160,0,.2); color: #ffb940; }
-  .id-result.error   { display: block; background: rgba(255,60,60,.08);  border: 1px solid rgba(255,60,60,.2);  color: #ff7070; }
-  .id-result .nick { font-weight: 600; font-size: .95rem; }
-  .id-result-loading { margin-top: 14px; display: none; text-align: center; color: var(--muted); font-size: .85rem; }
-  .spinner {
-    width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.1);
-    border-top-color: var(--ff); border-radius: 50%;
-    animation: spin .7s linear infinite;
-    display: inline-block; vertical-align: middle; margin-right: 8px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .products-section { padding: 0 16px; }
-  .products-section h3 {
-    font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 600;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
-    margin-bottom: 14px; padding-left: 4px;
-  }
-  .products-list { display: flex; flex-direction: column; gap: 10px; }
-
-  .product-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); display: flex; align-items: center;
-    gap: 14px; padding: 14px 16px;
-    transition: border-color .2s, background .2s;
-    position: relative; overflow: hidden;
-  }
-  .product-card::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
-    width: 3px; background: var(--accent, #555); border-radius: 3px 0 0 3px;
-  }
-  .product-card:hover { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.03); }
-  .product-card.has-discount { border-color: rgba(0,255,120,.15); }
-
-  .product-icon { font-size: 1.5rem; flex-shrink: 0; }
-  .product-info { flex: 1; min-width: 0; }
-  .product-amount { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.1rem; letter-spacing: .04em; }
-  .price-block { text-align: right; flex-shrink: 0; }
-  .price-original { font-size: .78rem; color: var(--muted); text-decoration: line-through; }
-  .price-main { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.15rem; }
-  .discount-badge {
-    display: inline-block; background: rgba(0,255,120,.15); color: #5fff9a;
-    font-size: .68rem; font-weight: 600; letter-spacing: .06em;
-    border-radius: 4px; padding: 2px 6px; margin-top: 2px;
-  }
-
-  .buy-btn {
-    flex-shrink: 0; border: none; border-radius: 8px; cursor: pointer;
-    font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: .95rem;
-    letter-spacing: .05em; padding: 10px 16px;
-    transition: filter .2s, transform .15s; white-space: nowrap;
-  }
-  .buy-btn:hover  { filter: brightness(1.2); }
-  .buy-btn:active { transform: scale(.94); }
-
-  #page-ff .section-hero h2 { color: var(--ff); }
-  #page-ff .product-card { --accent: var(--ff); }
-  #page-ff .buy-btn { background: var(--ff); color: #fff; }
-
-  #page-bs .section-hero h2 { color: var(--bs); }
-  #page-bs .product-card { --accent: var(--bs); }
-  #page-bs .buy-btn { background: var(--bs); color: #111; }
-
-  #page-ig .section-hero h2 { color: var(--ig); }
-  #page-ig .product-card { --accent: var(--ig); }
-  #page-ig .buy-btn { background: linear-gradient(135deg, #f77737, #E1306C, #833AB4); color: #fff; }
-
-  #page-rb .section-hero h2 { color: var(--rb); }
-  #page-rb .product-card { --accent: var(--rb); }
-  #page-rb .buy-btn { background: var(--rb); color: #003a4d; }
-
-  .ig-tabs { display: flex; gap: 8px; padding: 0 16px 20px; overflow-x: auto; scrollbar-width: none; }
-  .ig-tabs::-webkit-scrollbar { display: none; }
-  .ig-tab {
-    flex-shrink: 0; background: rgba(255,255,255,.06); border: 1px solid var(--border);
-    border-radius: 20px; color: var(--muted); cursor: pointer;
-    font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: .88rem;
-    letter-spacing: .05em; padding: 8px 18px; transition: background .2s, color .2s, border-color .2s;
-  }
-  .ig-tab.active { background: rgba(225,48,108,.15); border-color: rgba(225,48,108,.4); color: var(--ig); }
-
-  .pack-pro-card {
-    margin: 0 16px 10px;
-    background: linear-gradient(135deg, rgba(0,212,255,.12) 0%, rgba(0,80,140,.1) 100%);
-    border: 1px solid rgba(0,212,255,.3); border-radius: var(--radius);
-    padding: 20px; display: flex; align-items: center; gap: 14px;
-    position: relative; overflow: hidden;
-  }
-  .pack-pro-card::after {
-    content: 'PACK PRO'; position: absolute; top: 10px; right: 10px;
-    font-family: 'Rajdhani', sans-serif; font-size: .68rem; font-weight: 700;
-    letter-spacing: .12em; color: var(--rb);
-    background: rgba(0,212,255,.1); border: 1px solid rgba(0,212,255,.25);
-    border-radius: 4px; padding: 3px 8px;
-  }
-  .pack-pro-card .product-amount { font-size: 1.4rem; color: var(--rb); }
-  .pack-pro-card .price-main { color: var(--rb); font-size: 1.3rem; }
-
-  .section-divider { height: 1px; background: var(--border); margin: 20px 16px; }
-
-  .trust-strip { display: flex; gap: 6px; padding: 0 16px 28px; flex-wrap: wrap; }
-  .trust-pill {
-    font-size: .75rem; color: var(--muted);
-    background: rgba(255,255,255,.04); border: 1px solid var(--border);
-    border-radius: 20px; padding: 5px 12px;
-    display: flex; align-items: center; gap: 5px;
-  }
-
-  @media (max-width: 480px) {
-    .orbs-grid { gap: 16px; width: 90vw; }
-    .buy-btn { padding: 10px 12px; font-size: .85rem; }
-    .product-card { padding: 12px 14px; }
-  }
+  .back-btn { background:rgba(255,255,255,.08); border:none; border-radius:8px; color:var(--text); cursor:pointer; font-size:1.2rem; padding:6px 12px; transition:background .2s; }
+  .back-btn:hover { background:rgba(255,255,255,.15); }
+  .topbar-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1.25rem; letter-spacing:.06em; }
+  .topbar-badge { margin-left:auto; font-size:.75rem; background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:20px; padding:4px 12px; color:var(--muted); }
+  .section-hero { padding:32px 20px 24px; text-align:center; }
+  .section-hero h2 { font-family:'Rajdhani',sans-serif; font-size:clamp(1.8rem,6vw,3rem); font-weight:700; letter-spacing:.06em; }
+  .section-hero p { margin-top:8px; color:var(--muted); font-size:.88rem; max-width:420px; margin-inline:auto; }
+  .id-panel { margin:0 16px 24px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; animation:float-panel 4s ease-in-out infinite; }
+  @keyframes float-panel { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .id-panel label { display:block; font-size:.78rem; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+  .id-input-row { display:flex; gap:10px; }
+  .id-input { flex:1; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:8px; color:var(--text); font-family:'Inter',sans-serif; font-size:.95rem; padding:12px 14px; outline:none; transition:border-color .2s; min-width:0; }
+  .id-input::placeholder { color:rgba(255,255,255,.25); font-style:italic; }
+  .id-input:focus { border-color:var(--ff); }
+  .id-btn { background:var(--ff); border:none; border-radius:8px; color:#fff; cursor:pointer; font-family:'Rajdhani',sans-serif; font-size:1rem; font-weight:600; letter-spacing:.05em; padding:12px 18px; transition:filter .2s, transform .15s; white-space:nowrap; }
+  .id-btn:hover { filter:brightness(1.15); }
+  .id-btn:active { transform:scale(.96); }
+  .id-result { margin-top:14px; border-radius:8px; padding:12px 14px; font-size:.88rem; display:none; }
+  .id-result.success { display:block; background:rgba(0,255,120,.08); border:1px solid rgba(0,255,120,.2); color:#5fff9a; }
+  .id-result.warning { display:block; background:rgba(255,160,0,.08); border:1px solid rgba(255,160,0,.2); color:#ffb940; }
+  .id-result.error   { display:block; background:rgba(255,60,60,.08); border:1px solid rgba(255,60,60,.2); color:#ff7070; }
+  .id-result .nick { font-weight:600; font-size:.95rem; }
+  .id-result-loading { margin-top:14px; display:none; text-align:center; color:var(--muted); font-size:.85rem; }
+  .spinner { width:22px; height:22px; border:2px solid rgba(255,255,255,.1); border-top-color:var(--ff); border-radius:50%; animation:spin .7s linear infinite; display:inline-block; vertical-align:middle; margin-right:8px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .products-section { padding:0 16px; }
+  .products-section h3 { font-family:'Rajdhani',sans-serif; font-size:1rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; padding-left:4px; }
+  .products-list { display:flex; flex-direction:column; gap:10px; }
+  .product-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); display:flex; align-items:center; gap:14px; padding:14px 16px; transition:border-color .2s, background .2s; position:relative; overflow:hidden; }
+  .product-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent,#555); border-radius:3px 0 0 3px; }
+  .product-card:hover { border-color:rgba(255,255,255,.14); background:rgba(255,255,255,.03); }
+  .product-card.has-discount { border-color:rgba(0,255,120,.15); }
+  .product-icon { font-size:1.5rem; flex-shrink:0; }
+  .product-info { flex:1; min-width:0; }
+  .product-amount { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1.1rem; letter-spacing:.04em; }
+  .price-block { text-align:right; flex-shrink:0; }
+  .price-original { font-size:.78rem; color:var(--muted); text-decoration:line-through; }
+  .price-main { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:1.15rem; }
+  .discount-badge { display:inline-block; background:rgba(0,255,120,.15); color:#5fff9a; font-size:.68rem; font-weight:600; letter-spacing:.06em; border-radius:4px; padding:2px 6px; margin-top:2px; }
+  .buy-btn { flex-shrink:0; border:none; border-radius:8px; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:.95rem; letter-spacing:.05em; padding:10px 16px; transition:filter .2s, transform .15s; white-space:nowrap; }
+  .buy-btn:hover  { filter:brightness(1.2); }
+  .buy-btn:active { transform:scale(.94); }
+  #page-ff .section-hero h2 { color:var(--ff); }
+  #page-ff .product-card { --accent:var(--ff); }
+  #page-ff .buy-btn { background:var(--ff); color:#fff; }
+  #page-bs .section-hero h2 { color:var(--bs); }
+  #page-bs .product-card { --accent:var(--bs); }
+  #page-bs .buy-btn { background:var(--bs); color:#111; }
+  #page-ig .section-hero h2 { color:var(--ig); }
+  #page-ig .product-card { --accent:var(--ig); }
+  #page-ig .buy-btn { background:linear-gradient(135deg,#f77737,#E1306C,#833AB4); color:#fff; }
+  #page-rb .section-hero h2 { color:var(--rb); }
+  #page-rb .product-card { --accent:var(--rb); }
+  #page-rb .buy-btn { background:var(--rb); color:#003a4d; }
+  .ig-tabs { display:flex; gap:8px; padding:0 16px 20px; overflow-x:auto; scrollbar-width:none; }
+  .ig-tabs::-webkit-scrollbar { display:none; }
+  .ig-tab { flex-shrink:0; background:rgba(255,255,255,.06); border:1px solid var(--border); border-radius:20px; color:var(--muted); cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:600; font-size:.88rem; letter-spacing:.05em; padding:8px 18px; transition:background .2s, color .2s, border-color .2s; }
+  .ig-tab.active { background:rgba(225,48,108,.15); border-color:rgba(225,48,108,.4); color:var(--ig); }
+  .pack-pro-card { margin:0 16px 10px; background:linear-gradient(135deg,rgba(0,212,255,.12) 0%,rgba(0,80,140,.1) 100%); border:1px solid rgba(0,212,255,.3); border-radius:var(--radius); padding:20px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden; }
+  .pack-pro-card::after { content:'PACK PRO'; position:absolute; top:10px; right:10px; font-family:'Rajdhani',sans-serif; font-size:.68rem; font-weight:700; letter-spacing:.12em; color:var(--rb); background:rgba(0,212,255,.1); border:1px solid rgba(0,212,255,.25); border-radius:4px; padding:3px 8px; }
+  .pack-pro-card .product-amount { font-size:1.4rem; color:var(--rb); }
+  .pack-pro-card .price-main { color:var(--rb); font-size:1.3rem; }
+  .section-divider { height:1px; background:var(--border); margin:20px 16px; }
+  .trust-strip { display:flex; gap:6px; padding:0 16px 28px; flex-wrap:wrap; }
+  .trust-pill { font-size:.75rem; color:var(--muted); background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:20px; padding:5px 12px; display:flex; align-items:center; gap:5px; }
+  @media (max-width:480px) { .orbs-grid{gap:16px;width:90vw;} .buy-btn{padding:10px 12px;font-size:.85rem;} .product-card{padding:12px 14px;} }
 </style>
 </head>
 <body>
-
 <div id="particles"></div>
 
-<!-- LOBBY -->
 <div id="lobby">
   <div class="lobby-header">
     <h1>SATO STORE</h1>
     <p>Recargas gaming · Redes sociales · 100% confiable</p>
   </div>
   <div class="orbs-grid">
-    <div class="orb orb-ff" onclick="openSection('ff')">
-      <span class="orb-icon">🔥</span>
-      <span class="orb-label">FREE FIRE</span>
-    </div>
-    <div class="orb orb-bs" onclick="openSection('bs')">
-      <span class="orb-icon">⚔️</span>
-      <span class="orb-label">BLOOD STRIKE</span>
-    </div>
-    <div class="orb orb-ig" onclick="openSection('ig')">
-      <span class="orb-icon">📸</span>
-      <span class="orb-label">INSTAGRAM</span>
-    </div>
-    <div class="orb orb-rb" onclick="openSection('rb')">
-      <span class="orb-icon">🎮</span>
-      <span class="orb-label">ROBLOX</span>
-    </div>
+    <div class="orb orb-ff" onclick="openSection('ff')"><span class="orb-icon">🔥</span><span class="orb-label">FREE FIRE</span></div>
+    <div class="orb orb-bs" onclick="openSection('bs')"><span class="orb-icon">⚔️</span><span class="orb-label">BLOOD STRIKE</span></div>
+    <div class="orb orb-ig" onclick="openSection('ig')"><span class="orb-icon">📸</span><span class="orb-label">INSTAGRAM</span></div>
+    <div class="orb orb-rb" onclick="openSection('rb')"><span class="orb-icon">🎮</span><span class="orb-label">ROBLOX</span></div>
   </div>
   <div class="trust-strip" style="justify-content:center;">
     <div class="trust-pill">✅ Entrega inmediata</div>
@@ -326,7 +156,6 @@
   </div>
 </div>
 
-<!-- FREE FIRE -->
 <div id="page-ff" class="section-page">
   <div class="topbar">
     <button class="back-btn" onclick="closeSection()">←</button>
@@ -337,32 +166,28 @@
     <h2>DIAMANTES FF</h2>
     <p>Ingresá tu ID para ver tus precios personalizados.</p>
   </div>
-  <div style="padding: 0 16px;">
+  <div style="padding:0 16px;">
     <div class="id-panel">
       <label>Verificá tu ID de jugador</label>
       <div class="id-input-row">
-        <input class="id-input" id="ff-id-input" type="text"
-          placeholder="ingresa tu ID aquí..." maxlength="20" inputmode="numeric">
+        <input class="id-input" id="ff-id-input" type="text" placeholder="ingresa tu ID aquí..." maxlength="20" inputmode="numeric">
         <button class="id-btn" onclick="checkFFId()">Verificar</button>
       </div>
       <div class="id-result-loading" id="ff-loading">
-        <span class="spinner"></span> Verificando tu cuenta... (puede tardar ~30 seg)
+        <span class="spinner"></span> Verificando tu cuenta... puede tardar hasta 60 seg ⏳
       </div>
       <div class="id-result" id="ff-result"></div>
     </div>
   </div>
-
-  <div id="ff-pre-verify" style="text-align:center; padding:32px 20px; color:var(--muted);">
-    <div style="font-size:2.5rem; margin-bottom:12px;">🔍</div>
-    <div style="font-family:'Rajdhani',sans-serif; font-size:1.1rem; font-weight:600; color:var(--text); margin-bottom:6px;">Verificá tu ID primero</div>
-    <div style="font-size:.85rem; max-width:280px; margin:0 auto; line-height:1.6;">Ingresá tu UID de Free Fire para ver los precios según tu cuenta.</div>
+  <div id="ff-pre-verify" style="text-align:center;padding:32px 20px;color:var(--muted);">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🔍</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:6px;">Verificá tu ID primero</div>
+    <div style="font-size:.85rem;max-width:280px;margin:0 auto;line-height:1.6;">Ingresá tu UID de Free Fire para ver los precios según tu cuenta.</div>
   </div>
-
-  <div class="products-section" id="ff-products" style="margin-top:20px; display:none;">
+  <div class="products-section" id="ff-products" style="margin-top:20px;display:none;">
     <h3>Tus precios</h3>
     <div class="products-list" id="ff-list"></div>
   </div>
-
   <div class="section-divider"></div>
   <div class="trust-strip">
     <div class="trust-pill">🌍 Servidor Rep. Dominicana</div>
@@ -371,7 +196,6 @@
   </div>
 </div>
 
-<!-- BLOOD STRIKE -->
 <div id="page-bs" class="section-page">
   <div class="topbar">
     <button class="back-btn" onclick="closeSection()">←</button>
@@ -398,7 +222,6 @@
   </div>
 </div>
 
-<!-- INSTAGRAM -->
 <div id="page-ig" class="section-page">
   <div class="topbar">
     <button class="back-btn" onclick="closeSection()">←</button>
@@ -414,18 +237,9 @@
     <button class="ig-tab" onclick="setIgTab('views',this)">▶️ Visualizaciones</button>
     <button class="ig-tab" onclick="setIgTab('likes',this)">❤️ Me gusta</button>
   </div>
-  <div class="products-section" id="ig-followers">
-    <h3>Seguidores</h3>
-    <div class="products-list" id="ig-followers-list"></div>
-  </div>
-  <div class="products-section" id="ig-views" style="display:none;">
-    <h3>Visualizaciones</h3>
-    <div class="products-list" id="ig-views-list"></div>
-  </div>
-  <div class="products-section" id="ig-likes" style="display:none;">
-    <h3>Me gusta</h3>
-    <div class="products-list" id="ig-likes-list"></div>
-  </div>
+  <div class="products-section" id="ig-followers"><h3>Seguidores</h3><div class="products-list" id="ig-followers-list"></div></div>
+  <div class="products-section" id="ig-views" style="display:none;"><h3>Visualizaciones</h3><div class="products-list" id="ig-views-list"></div></div>
+  <div class="products-section" id="ig-likes" style="display:none;"><h3>Me gusta</h3><div class="products-list" id="ig-likes-list"></div></div>
   <div class="section-divider"></div>
   <div class="trust-strip">
     <div class="trust-pill">👤 Cuentas reales</div>
@@ -434,7 +248,6 @@
   </div>
 </div>
 
-<!-- ROBLOX -->
 <div id="page-rb" class="section-page">
   <div class="topbar">
     <button class="back-btn" onclick="closeSection()">←</button>
@@ -449,22 +262,14 @@
     <div class="product-icon">💎</div>
     <div class="product-info">
       <div class="product-amount">2.000 Robux</div>
-      <div style="font-size:.78rem; color:var(--muted); margin-top:2px;">El pack más pedido</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:2px;">El pack más pedido</div>
     </div>
-    <div class="price-block" style="margin-right:10px;">
-      <div class="price-main" style="color:var(--rb)">$23.500</div>
-    </div>
+    <div class="price-block" style="margin-right:10px;"><div class="price-main" style="color:var(--rb)">$23.500</div></div>
     <button class="buy-btn" onclick="buyWA('🎮 ROBLOX - Pack Pro: 2000 Robux — $23.500 ARS')">Comprar</button>
   </div>
-  <div class="products-section" style="margin-top:8px;">
-    <h3>Robux disponibles</h3>
-    <div class="products-list" id="rb-list-base"></div>
-  </div>
+  <div class="products-section" style="margin-top:8px;"><h3>Robux disponibles</h3><div class="products-list" id="rb-list-base"></div></div>
   <div class="section-divider"></div>
-  <div class="products-section">
-    <h3>🔥 Ofertas más pedidas</h3>
-    <div class="products-list" id="rb-list-hot"></div>
-  </div>
+  <div class="products-section"><h3>🔥 Ofertas más pedidas</h3><div class="products-list" id="rb-list-hot"></div></div>
   <div class="section-divider"></div>
   <div class="trust-strip">
     <div class="trust-pill">🔒 100% seguro</div>
@@ -475,26 +280,196 @@
 
 <script>
 const WA_NUMBER = '5493757626730';
-
 const FF_SIN = [
-  { key: '110',  amount: '110 💎',   price: '$1.500',  original: '$1.700'  },
-  { key: '341',  amount: '341 💎',   price: '$4.300',  original: '$5.600'  },
-  { key: '572',  amount: '572 💎',   price: '$5.800',  original: '$6.800'  },
-  { key: '1166', amount: '1.166 💎', price: '$11.500', original: '$14.500' },
-  { key: '2398', amount: '2.398 💎', price: '$20.400', original: '$24.400' },
-  { key: '6160', amount: '6.160 💎', price: '$49.300', original: '$60.300' },
+  { key:'110',  amount:'110 💎',   price:'$1.500',  original:'$1.700'  },
+  { key:'341',  amount:'341 💎',   price:'$4.300',  original:'$5.600'  },
+  { key:'572',  amount:'572 💎',   price:'$5.800',  original:'$6.800'  },
+  { key:'1166', amount:'1.166 💎', price:'$11.500', original:'$14.500' },
+  { key:'2398', amount:'2.398 💎', price:'$20.400', original:'$24.400' },
+  { key:'6160', amount:'6.160 💎', price:'$49.300', original:'$60.300' },
 ];
-
 const BS_GOLDS = [
-  { amount: '51 Golds',    price: '$967'    },
-  { amount: '105 Golds',   price: '$1.867'  },
-  { amount: '320 Golds',   price: '$4.467'  },
-  { amount: '540 Golds',   price: '$7.167'  },
-  { amount: '1.100 Golds', price: '$13.267' },
-  { amount: '2.260 Golds', price: '$26.567' },
-  { amount: '5.800 Golds', price: '$67.667' },
+  { amount:'51 Golds',    price:'$967'    },
+  { amount:'105 Golds',   price:'$1.867'  },
+  { amount:'320 Golds',   price:'$4.467'  },
+  { amount:'540 Golds',   price:'$7.167'  },
+  { amount:'1.100 Golds', price:'$13.267' },
+  { amount:'2.260 Golds', price:'$26.567' },
+  { amount:'5.800 Golds', price:'$67.667' },
 ];
 const BS_PASSES = [
-  { amount: 'Level-Up Pass',       price: '$3.767'  },
-  { amount: 'Strike Pass Elite',   price: '$7.667'  },
-  { amount: 'Strike Pass
+  { amount:'Level-Up Pass',       price:'$3.767'  },
+  { amount:'Strike Pass Elite',   price:'$7.667'  },
+  { amount:'Strike Pass Premium', price:'$14.567' },
+];
+const IG_FOLLOWERS = [
+  { amount:'500 seguidores',    price:'$1.400'  },
+  { amount:'700 seguidores',    price:'$1.800'  },
+  { amount:'1.000 seguidores',  price:'$3.700'  },
+  { amount:'2.000 seguidores',  price:'$7.600'  },
+  { amount:'3.000 seguidores',  price:'$7.900'  },
+  { amount:'4.000 seguidores',  price:'$8.800'  },
+  { amount:'5.000 seguidores',  price:'$9.100'  },
+  { amount:'10.000 seguidores', price:'$17.500' },
+  { amount:'15.000 seguidores', price:'$21.000' },
+  { amount:'20.000 seguidores', price:'$27.000' },
+];
+const IG_VIEWS = [
+  { amount:'500 views',    price:'$900'   },
+  { amount:'1.000 views',  price:'$1.000' },
+  { amount:'3.000 views',  price:'$1.300' },
+  { amount:'5.000 views',  price:'$3.200' },
+  { amount:'10.000 views', price:'$4.500' },
+];
+const IG_LIKES = [
+  { amount:'100 likes',   price:'$1.500' },
+  { amount:'250 likes',   price:'$1.650' },
+  { amount:'500 likes',   price:'$1.800' },
+  { amount:'1.000 likes', price:'$3.800' },
+  { amount:'2.500 likes', price:'$5.500' },
+  { amount:'5.000 likes', price:'$8.500' },
+];
+const RB_BASE = [
+  { amount:'100 Robux',  price:'$1.800' },
+  { amount:'200 Robux',  price:'$3.100' },
+  { amount:'300 Robux',  price:'$4.200' },
+  { amount:'400 Robux',  price:'$6.300' },
+  { amount:'500 Robux',  price:'$7.400' },
+];
+const RB_HOT = [
+  { amount:'600 Robux',   price:'$9.200'  },
+  { amount:'700 Robux',   price:'$10.000' },
+  { amount:'800 Robux',   price:'$14.400' },
+  { amount:'900 Robux',   price:'$15.500' },
+  { amount:'1.000 Robux', price:'$17.100' },
+];
+
+(function(){
+  const c=document.getElementById('particles');
+  const colors=['#FF4B2B','#FFD700','#E1306C','#00D4FF'];
+  for(let i=0;i<28;i++){
+    const p=document.createElement('div'); p.className='particle';
+    const s=Math.random()*4+2;
+    p.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${Math.random()*18+10}s;animation-delay:${Math.random()*12}s;`;
+    c.appendChild(p);
+  }
+})();
+
+function openSection(id){
+  document.getElementById('lobby').classList.add('hidden');
+  setTimeout(()=>{
+    document.getElementById('lobby').style.display='none';
+    document.getElementById('page-'+id).classList.add('active');
+  },300);
+}
+function closeSection(){
+  document.querySelectorAll('.section-page.active').forEach(p=>p.classList.remove('active'));
+  const lobby=document.getElementById('lobby');
+  lobby.style.display='';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>lobby.classList.remove('hidden')));
+  document.getElementById('ff-id-input').value='';
+  document.getElementById('ff-result').className='id-result';
+  document.getElementById('ff-result').innerHTML='';
+  document.getElementById('ff-loading').style.display='none';
+  document.getElementById('ff-pre-verify').style.display='';
+  document.getElementById('ff-products').style.display='none';
+}
+
+function buyWA(product){
+  const msg=encodeURIComponent(`Hola! Quiero comprar:\n➡️ ${product}\n\n¿Cómo procedo?`);
+  window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`,'_blank');
+}
+
+function makeCard(icon,amount,price,original,wamsg){
+  const hasDis=!!original;
+  return `<div class="product-card ${hasDis?'has-discount':''}">
+    <div class="product-icon">${icon}</div>
+    <div class="product-info">
+      <div class="product-amount">${amount}</div>
+      ${hasDis?'<div class="discount-badge">DESCUENTO ✓</div>':''}
+    </div>
+    <div class="price-block">
+      ${original?`<div class="price-original">${original}</div>`:''}
+      <div class="price-main">${price}</div>
+    </div>
+    <button class="buy-btn" onclick="buyWA('${wamsg.replace(/'/g,"\\'")}')">Comprar</button>
+  </div>`;
+}
+
+function showFFProducts(){
+  document.getElementById('ff-pre-verify').style.display='none';
+  document.getElementById('ff-products').style.display='';
+}
+
+function renderFFProductsIndividual(discounts){
+  let html='';
+  FF_SIN.forEach(item=>{
+    const hasDis=discounts[item.key]===true;
+    const price=hasDis?item.price:item.original;
+    const orig=hasDis?item.original:null;
+    html+=makeCard('💎',item.amount,price,orig,`🔥 FREE FIRE - ${item.amount} — ${price}`);
+  });
+  document.getElementById('ff-list').innerHTML=html;
+  document.querySelector('#ff-products h3').textContent='✨ Tus precios personalizados';
+}
+
+async function checkFFId(){
+  const raw=document.getElementById('ff-id-input').value.trim();
+  const result=document.getElementById('ff-result');
+  const loading=document.getElementById('ff-loading');
+  if(!raw||!/^\d{5,15}$/.test(raw)){
+    result.className='id-result error';
+    result.innerHTML='⚠️ Ingresá solo números (tu UID de Free Fire).';
+    return;
+  }
+  result.className='id-result'; result.innerHTML='';
+  loading.style.display='block';
+  try{
+    const res=await fetch(`/.netlify/functions/check-ff?uid=${raw}`,{ signal:AbortSignal.timeout(120000) });
+    const data=await res.json();
+    loading.style.display='none';
+    if(data.error) throw new Error(data.error);
+    const d=data.discounts||data;
+    const nick=data.nick;
+    const hasAny=Object.values(d).some(v=>v);
+    result.className='id-result success';
+    result.innerHTML=`<div class="nick">👤 ${nick||'Jugador #'+raw}</div>
+      <div style="margin-top:4px;">${hasAny?'¡Tenés descuentos activos en algunos montos! 🔥':'Tu ID no tiene descuentos activos en este momento.'}</div>`;
+    renderFFProductsIndividual(d);
+    showFFProducts();
+  }catch(err){
+    loading.style.display='none';
+    result.className='id-result warning';
+    result.innerHTML=`⚠️ No pudimos verificar tu ID. Contactanos por WhatsApp y lo chequeamos juntos.
+      <div style="margin-top:8px;">
+        <button class="buy-btn" style="background:var(--ff);width:100%;margin-top:4px;" onclick="buyWA('🔥 FF - Verificar descuento para UID: ${raw}')">Consultar por WhatsApp</button>
+      </div>`;
+    renderFFProductsIndividual({'110':false,'341':false,'572':false,'1166':false,'2398':false,'6160':false});
+    showFFProducts();
+  }
+}
+
+function renderBS(){
+  BS_GOLDS.forEach(i=>{ document.getElementById('bs-list-golds').innerHTML+=makeCard('🥇',i.amount,i.price,null,`⚔️ BLOOD STRIKE - ${i.amount} — ${i.price}`); });
+  BS_PASSES.forEach(i=>{ document.getElementById('bs-list-passes').innerHTML+=makeCard('🎟️',i.amount,i.price,null,`⚔️ BLOOD STRIKE - ${i.amount} — ${i.price}`); });
+}
+function renderIG(){
+  IG_FOLLOWERS.forEach(i=>{ document.getElementById('ig-followers-list').innerHTML+=makeCard('👥',i.amount,i.price,null,`📸 IG Seguidores - ${i.amount} — ${i.price}`); });
+  IG_VIEWS.forEach(i=>{ document.getElementById('ig-views-list').innerHTML+=makeCard('▶️',i.amount,i.price,null,`📸 IG Visualizaciones - ${i.amount} — ${i.price}`); });
+  IG_LIKES.forEach(i=>{ document.getElementById('ig-likes-list').innerHTML+=makeCard('❤️',i.amount,i.price,null,`📸 IG Me gusta - ${i.amount} — ${i.price}`); });
+}
+function setIgTab(tab,el){
+  document.querySelectorAll('.ig-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['followers','views','likes'].forEach(t=>{ document.getElementById('ig-'+t).style.display=(t===tab)?'':'none'; });
+}
+function renderRB(){
+  RB_BASE.forEach(i=>{ document.getElementById('rb-list-base').innerHTML+=makeCard('💠',i.amount,i.price,null,`🎮 ROBLOX - ${i.amount} — ${i.price}`); });
+  RB_HOT.forEach(i=>{ document.getElementById('rb-list-hot').innerHTML+=makeCard('🔥',i.amount,i.price,null,`🎮 ROBLOX - ${i.amount} — ${i.price}`); });
+}
+
+renderBS(); renderIG(); renderRB();
+document.getElementById('ff-id-input').addEventListener('keydown',e=>{ if(e.key==='Enter') checkFFId(); });
+</script>
+</body>
+</html>
