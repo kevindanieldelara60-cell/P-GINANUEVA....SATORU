@@ -22,106 +22,117 @@ exports.handler = async (event) => {
     { key: "6160", itemId: "49523" },
   ];
 
-  const code = `
-    export default async ({ page }) => {
-      const uid = "${uid}";
-      const items = ${JSON.stringify(ITEMS)};
-      const results = {};
+  // Verificamos cada item en paralelo — una sesión de browser por item
+  const checkItem = async (item) => {
+    const code = `
+      export default async ({ page }) => {
+        await page.setUserAgent("Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36");
+        await page.goto("https://pagostore.garena.com/?item=${item.itemId}&uid=${uid}", {
+          waitUntil: "networkidle2",
+          timeout: 20000,
+        });
+        await new Promise(r => setTimeout(r, 2500));
 
-      await page.setUserAgent("Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36");
+        const result = await page.evaluate(() => {
+          // Buscamos precio en rojo = descuento activo
+          const allElements = document.querySelectorAll("*");
+          for (const el of allElements) {
+            const style = window.getComputedStyle(el);
+            const color = style.color;
+            const text = el.innerText || "";
+            if (color.startsWith("rgb(") && text.includes("DOP")) {
+              const parts = color.match(/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)/);
+              if (parts) {
+                const r = parseInt(parts[1]);
+                const g = parseInt(parts[2]);
+                const b = parseInt(parts[3]);
+                if (r > 150 && g < 100 && b < 100) return true;
+              }
+            }
+          }
+          return (
+            !!document.querySelector("[style*='line-through']") ||
+            !!document.querySelector(".original-price") ||
+            !!document.querySelector(".old-price") ||
+            !!document.querySelector("del") ||
+            document.body.innerHTML.includes("line-through")
+          );
+        });
 
-      // Cargamos la primera página con el UID
-      await page.goto("https://pagostore.garena.com/?item=49518&uid=" + uid, {
-        waitUntil: "networkidle2",
-        timeout: 30000,
-      });
-      await new Promise(r => setTimeout(r, 2000));
+        return { data: result, type: "application/json" };
+      };
+    `;
 
-      // Extraemos el nickname
-      let nick = null;
-      try {
-        nick = await page.evaluate(() => {
-          const selectors = [
-            ".username", ".player-name", ".account-name",
-            "[class*='username']", "[class*='nickname']", "[class*='account']"
-          ];
+    try {
+      const res = await fetch(
+        `https://production-sfo.browserless.io/function?token=${process.env.BROWSERLESS_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/javascript" },
+          body: code,
+        }
+      );
+      const data = await res.json();
+      return { key: item.key, hasDiscount: data === true || data?.data === true || data === "true" };
+    } catch {
+      return { key: item.key, hasDiscount: false };
+    }
+  };
+
+  // Obtenemos el nick en paralelo con el primer item
+  const getNick = async () => {
+    const code = `
+      export default async ({ page }) => {
+        await page.setUserAgent("Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36");
+        await page.goto("https://pagostore.garena.com/?item=49518&uid=${uid}", {
+          waitUntil: "networkidle2",
+          timeout: 20000,
+        });
+        await new Promise(r => setTimeout(r, 2000));
+        const nick = await page.evaluate(() => {
+          const text = document.body.innerText;
+          const match = text.match(/Nombre de usuario[:\\s]+([^\\n\\r]+)/i);
+          if (match) return match[1].trim();
+          const selectors = [".username",".player-name","[class*='username']","[class*='nickname']","[class*='account-name']"];
           for (const sel of selectors) {
             const el = document.querySelector(sel);
             if (el && el.innerText.trim()) return el.innerText.trim();
           }
-          // Buscar texto que diga "Nombre de usuario:"
-          const allText = document.body.innerText;
-          const match = allText.match(/Nombre de usuario[:\\s]+([^\\n]+)/i);
-          return match ? match[1].trim() : null;
+          return null;
         });
-      } catch(e) {}
-
-      // Verificamos descuento en cada item
-      for (const item of items) {
-        try {
-          await page.goto("https://pagostore.garena.com/?item=" + item.itemId + "&uid=" + uid, {
-            waitUntil: "networkidle2",
-            timeout: 30000,
-          });
-          await new Promise(r => setTimeout(r, 3000));
-
-          const hasDiscount = await page.evaluate(() => {
-            // Buscamos precio en rojo (color rojo = descuento activo)
-            const allElements = document.querySelectorAll("*");
-            for (const el of allElements) {
-              const style = window.getComputedStyle(el);
-              const color = style.color;
-              const text = el.innerText || "";
-              // Rojo = rgb(255, ...) con valores bajos en G y B
-              if (color.startsWith("rgb(") && text.includes("DOP")) {
-                const parts = color.match(/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)/);
-                if (parts) {
-                  const r = parseInt(parts[1]);
-                  const g = parseInt(parts[2]);
-                  const b = parseInt(parts[3]);
-                  if (r > 150 && g < 100 && b < 100) return true;
-                }
-              }
-            }
-            // También buscamos precio tachado
-            return (
-              !!document.querySelector("[style*='line-through']") ||
-              !!document.querySelector(".original-price") ||
-              !!document.querySelector(".old-price") ||
-              !!document.querySelector("del") ||
-              document.body.innerHTML.includes("line-through")
-            );
-          });
-
-          results[item.key] = hasDiscount;
-        } catch(e) {
-          results[item.key] = false;
-        }
-      }
-
-      return {
-        data: { nick, discounts: results },
-        type: "application/json",
+        return { data: nick, type: "application/json" };
       };
-    };
-  `;
+    `;
+    try {
+      const res = await fetch(
+        `https://production-sfo.browserless.io/function?token=${process.env.BROWSERLESS_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/javascript" },
+          body: code,
+        }
+      );
+      const data = await res.json();
+      return data?.data || null;
+    } catch {
+      return null;
+    }
+  };
 
   try {
-    const response = await fetch(
-      `https://production-sfo.browserless.io/function?token=${process.env.BROWSERLESS_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/javascript" },
-        body: code,
-      }
-    );
+    // Lanzamos todo en paralelo
+    const [nickResult, ...itemResults] = await Promise.all([
+      getNick(),
+      ...ITEMS.map(item => checkItem(item)),
+    ]);
 
-    const data = await response.json();
+    const discounts = {};
+    itemResults.forEach(r => { discounts[r.key] = r.hasDiscount; });
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(data),
+      body: JSON.stringify({ nick: nickResult, discounts }),
     };
   } catch (err) {
     return {
