@@ -14,44 +14,42 @@ exports.handler = async (event) => {
         waitUntil: "networkidle2",
         timeout: 25000,
       });
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 3000));
 
-      const input = await page.$("input.form-input");
-      if (input) {
-        await input.click({ clickCount: 3 });
-        await input.press("Backspace");
-        for (const char of uid) {
-          await input.press(char);
-          await new Promise(r => setTimeout(r, 80));
-        }
-        await new Promise(r => setTimeout(r, 800));
-        const loginBtn = await page.evaluateHandle(() => {
-          return Array.from(document.querySelectorAll("button"))
-            .find(b => b.innerText.trim() === "Iniciar Sesión");
-        });
-        if (loginBtn) await loginBtn.asElement()?.click();
-        await new Promise(r => setTimeout(r, 6000));
-      }
+      // Clickeamos el input, lo limpiamos y escribimos con page.type
+      await page.click("input.form-input");
+      await page.keyboard.down("Control");
+      await page.keyboard.press("A");
+      await page.keyboard.up("Control");
+      await page.keyboard.press("Delete");
+      await new Promise(r => setTimeout(r, 300));
+      await page.type("input.form-input", uid, { delay: 120 });
+      await new Promise(r => setTimeout(r, 1000));
 
-      // Extraemos el HTML de la sección de método de pago solamente
+      // Clickeamos Iniciar Sesión
+      await page.evaluate(() => {
+        Array.from(document.querySelectorAll("button"))
+          .find(b => b.innerText.trim() === "Iniciar Sesión")?.click();
+      });
+
+      await new Promise(r => setTimeout(r, 7000));
+
       const result = await page.evaluate(() => {
         const text = document.body.innerText;
+        const loggedIn = text.includes("Nombre de usuario") || text.includes("ID de jugador\n");
+        const hasDiscount = text.includes("PROMO") && document.body.innerHTML.includes("line-through");
         
-        // Buscamos todos los elementos que contienen "DOP"
+        // Buscamos elementos DOP
         const dopEls = Array.from(document.querySelectorAll("*"))
-          .filter(el => 
-            el.children.length === 0 && 
-            (el.innerText || "").includes("DOP")
-          )
+          .filter(el => el.children.length === 0 && (el.innerText||"").includes("DOP"))
+          .slice(0, 10)
           .map(el => ({
             text: el.innerText.trim(),
-            className: el.className,
-            tagName: el.tagName,
-            computedDecoration: window.getComputedStyle(el).textDecoration,
-            parentClass: el.parentElement?.className || ""
+            cls: el.className.substring(0, 80),
+            dec: window.getComputedStyle(el).textDecoration
           }));
 
-        return { dopEls, bodySnippet: text.substring(0, 800) };
+        return { loggedIn, hasDiscount, dopEls, snippet: text.substring(0, 600) };
       });
 
       return { data: result, type: "application/json" };
