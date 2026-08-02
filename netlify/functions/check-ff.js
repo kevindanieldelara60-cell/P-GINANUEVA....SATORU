@@ -28,76 +28,51 @@ exports.handler = async (event) => {
       });
       await new Promise(r => setTimeout(r, 2000));
 
-      // Llenamos el input usando el placeholder exacto
-      await page.evaluate((uid) => {
-        const input = Array.from(document.querySelectorAll("input"))
-          .find(el => el.placeholder && el.placeholder.includes("ID del jugador"));
-        if (input) {
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-          nativeInputValueSetter.call(input, uid);
-          input.dispatchEvent(new Event("input", { bubbles: true }));
-          input.dispatchEvent(new Event("change", { bubbles: true }));
+      // Truco para React: simular escritura real tecla por tecla
+      const input = await page.$("input.form-input");
+      if (input) {
+        await input.click({ clickCount: 3 });
+        await input.press("Backspace");
+        
+        // Escribimos el UID caracter por caracter como si fuera un humano
+        for (const char of uid) {
+          await input.press(char);
+          await new Promise(r => setTimeout(r, 80));
         }
-      }, uid);
+        
+        await new Promise(r => setTimeout(r, 800));
 
-      await new Promise(r => setTimeout(r, 500));
+        // Clickeamos Iniciar Sesión
+        const loginBtn = await page.evaluateHandle(() => {
+          return Array.from(document.querySelectorAll("button"))
+            .find(b => b.innerText.trim() === "Iniciar Sesión");
+        });
+        
+        if (loginBtn) {
+          await loginBtn.asElement()?.click();
+        }
 
-      // Clickeamos "Iniciar Sesión" usando el texto exacto
-      await page.evaluate(() => {
-        const btn = Array.from(document.querySelectorAll("button"))
-          .find(el => el.innerText.trim() === "Iniciar Sesión");
-        if (btn) btn.click();
-      });
+        // Esperamos que cargue la cuenta
+        await new Promise(r => setTimeout(r, 6000));
+      }
 
-      // Esperamos que cargue la cuenta y los métodos de pago
-      await new Promise(r => setTimeout(r, 5000));
-
-      // Detectamos descuento y nick
+      // Tomamos screenshot para debug y detectamos descuento
       const result = await page.evaluate(() => {
-        // Buscamos precio tachado con DOP
-        let hasDiscount = false;
-
-        // Método 1: text-decoration computado
-        const allEls = Array.from(document.querySelectorAll("*"));
-        for (const el of allEls) {
-          const text = el.innerText || "";
-          if (!text.includes("DOP")) continue;
-          const style = window.getComputedStyle(el);
-          if (
-            style.textDecoration.includes("line-through") ||
-            style.textDecorationLine.includes("line-through")
-          ) {
-            hasDiscount = true;
-            break;
-          }
-        }
-
-        // Método 2: HTML crudo
-        if (!hasDiscount) {
-          hasDiscount = document.body.innerHTML.includes("line-through");
-        }
-
-        // Nick
+        const html = document.body.innerHTML;
+        const text = document.body.innerText;
+        
+        // Detectamos descuento
+        const hasDiscount = html.includes("line-through");
+        
+        // Nick — buscamos después de "Nombre de usuario"
         let nick = null;
-        const bodyText = document.body.innerText || "";
-        const match = bodyText.match(/Nombre de usuario[:\\s]+([^\\n\\r]+)/i);
+        const match = text.match(/Nombre de usuario[^a-zA-Z0-9]*([\w\W]{2,40}?)(?:\\n|ID de jugador)/i);
         if (match) nick = match[1].trim();
 
-        // También buscamos el nick en el campo después del login
-        if (!nick) {
-          const accountEls = document.querySelectorAll(
-            "[class*='account'], [class*='username'], [class*='nickname'], [class*='player']"
-          );
-          for (const el of accountEls) {
-            const t = (el.innerText || "").trim();
-            if (t && t.length > 1 && t.length < 50) {
-              nick = t;
-              break;
-            }
-          }
-        }
+        // También buscamos si el login funcionó
+        const loggedIn = text.includes("ID de jugador") && !text.includes("Introduce el ID");
 
-        return { hasDiscount, nick };
+        return { hasDiscount, nick, loggedIn };
       });
 
       return {
@@ -125,10 +100,11 @@ exports.handler = async (event) => {
       return {
         key: item.key,
         hasDiscount: inner.hasDiscount === true,
+        loggedIn: inner.loggedIn === true,
         nick: inner.nick || null,
       };
-    } catch {
-      return { key: item.key, hasDiscount: false, nick: null };
+    } catch (e) {
+      return { key: item.key, hasDiscount: false, loggedIn: false, nick: null };
     }
   };
 
@@ -136,14 +112,16 @@ exports.handler = async (event) => {
 
   const discounts = {};
   let nick = null;
+  let anyLoggedIn = false;
   results.forEach(r => {
     discounts[r.key] = r.hasDiscount;
     if (r.nick && !nick) nick = r.nick;
+    if (r.loggedIn) anyLoggedIn = true;
   });
 
   return {
     statusCode: 200,
     headers,
-    body: JSON.stringify({ nick, discounts }),
+    body: JSON.stringify({ nick, discounts, debug_loggedIn: anyLoggedIn }),
   };
 };
